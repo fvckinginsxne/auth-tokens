@@ -9,8 +9,9 @@ import (
 )
 
 type Config struct {
-	Server ServerConfig `env-prefix:"SERVER_"`
-	DB     DBConfig     `env-prefix:"DB_"`
+	Server    ServerConfig `env-prefix:"SERVER_"`
+	DB        DBConfig     `env-prefix:"DB_"`
+	JWTSecret string       `env:"JWT_SECRET"`
 }
 
 type ServerConfig struct {
