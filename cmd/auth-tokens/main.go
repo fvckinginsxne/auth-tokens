@@ -15,11 +15,12 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"auth-tokens/internal/config"
-	"auth-tokens/internal/http-server/handler/tokens/generate"
-	"auth-tokens/internal/http-server/handler/users/save"
+	"auth-tokens/internal/http-server/handler/token/generate"
+	"auth-tokens/internal/http-server/handler/token/refresh"
+	"auth-tokens/internal/http-server/handler/user/save"
 	"auth-tokens/internal/lib/logger/sl"
 	authService "auth-tokens/internal/service/auth"
-	tokenGen "auth-tokens/internal/service/token-gen"
+	tokenService "auth-tokens/internal/service/token"
 	"auth-tokens/internal/storage/postgres"
 )
 
@@ -51,7 +52,7 @@ func main() {
 		panic(err)
 	}
 
-	tokenGenerator := tokenGen.New(log, cfg.JWTSecret, storage, storage)
+	token := tokenService.New(log, cfg.JWTSecret, storage, storage, storage)
 
 	auth := authService.New(log, storage)
 
@@ -61,8 +62,9 @@ func main() {
 	router.Use(middleware.URLFormat)
 
 	router.Route("/auth", func(r chi.Router) {
-		r.Route("/tokens", func(r chi.Router) {
-			r.Post("/{guid}", generate.New(ctx, log, tokenGenerator))
+		r.Route("/token", func(r chi.Router) {
+			r.Post("/{guid}", generate.New(ctx, log, token))
+			r.Post("/refresh", refresh.New(ctx, log, token))
 		})
 		r.Post("/", save.New(ctx, log, auth))
 	})
@@ -81,6 +83,7 @@ func main() {
 
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Error("failed to start server", sl.Err(err))
+			serverErr <- err
 		}
 	}()
 

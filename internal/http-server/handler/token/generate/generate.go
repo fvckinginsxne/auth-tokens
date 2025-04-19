@@ -11,7 +11,7 @@ import (
 
 	resp "auth-tokens/internal/lib/api/response"
 	"auth-tokens/internal/lib/logger/sl"
-	tokenGen "auth-tokens/internal/service/token-gen"
+	tokenService "auth-tokens/internal/service/token"
 )
 
 type Response struct {
@@ -20,7 +20,7 @@ type Response struct {
 }
 
 type TokenGenerator interface {
-	Generate(ctx context.Context, uuid, ip string) (accessToken string, refreshToken string, err error)
+	Generate(ctx context.Context, uuid, ip string) (accessToken, refreshToken string, err error)
 }
 
 func New(
@@ -29,7 +29,7 @@ func New(
 	tokenGenerator TokenGenerator,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handler.tokens.generate.New"
+		const op = "handler.token.generate.New"
 
 		log := log.With(slog.String("op", op))
 
@@ -45,32 +45,30 @@ func New(
 
 		ip := r.RemoteAddr
 
-		log.Info("generating tokens:",
+		log.Info("generating token:",
 			slog.String("guid", guid),
 			slog.String("ip", ip),
 		)
 
-		log.Info("generating new tokens")
+		log.Info("generating new token")
 
 		accessToken, refreshToken, err := tokenGenerator.Generate(ctx, guid, ip)
 		if err != nil {
-			if errors.Is(err, tokenGen.ErrUserNotExists) {
-				log.Error("user not exists")
+			switch {
+			case errors.Is(err, tokenService.ErrUserNotExists):
+				log.Error("user does not exist")
 
-				w.WriteHeader(http.StatusBadRequest)
+				sendResponseError(w, r, "user does not exist", http.StatusBadRequest)
+				return
+			default:
+				log.Error("failed to generate token:", sl.Err(err))
 
-				render.JSON(w, r, resp.Error("user not exists"))
+				sendResponseError(w, r, "internal error", http.StatusInternalServerError)
 				return
 			}
-			log.Error("failed to generate tokens:", sl.Err(err))
-
-			w.WriteHeader(http.StatusInternalServerError)
-
-			render.JSON(w, r, resp.Error("internal error"))
-			return
 		}
 
-		log.Info("tokens generated successfully")
+		log.Info("token generated successfully")
 
 		w.WriteHeader(http.StatusCreated)
 
@@ -79,4 +77,10 @@ func New(
 			refreshToken,
 		})
 	}
+}
+
+func sendResponseError(w http.ResponseWriter, r *http.Request, errMsg string, code int) {
+	w.WriteHeader(code)
+
+	render.JSON(w, r, resp.Error(errMsg))
 }
