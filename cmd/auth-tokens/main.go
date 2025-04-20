@@ -70,7 +70,7 @@ func main() {
 	})
 
 	srv := &http.Server{
-		Addr:         cfg.Server.Address,
+		Addr:         serverAddr(cfg),
 		Handler:      router,
 		ReadTimeout:  cfg.Server.Timeout,
 		WriteTimeout: cfg.Server.Timeout,
@@ -114,7 +114,11 @@ func dbURL(cfg *config.Config) string {
 		cfg.DB.User,
 		cfg.DB.Password,
 		cfg.DB.Host,
-		cfg.DB.Port,
+		cfg.DB.DockerPort,
 		cfg.DB.Name,
 	)
+}
+
+func serverAddr(cfg *config.Config) string {
+	return cfg.Server.Host + ":" + cfg.Server.Port
 }

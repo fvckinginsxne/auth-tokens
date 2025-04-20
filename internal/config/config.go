@@ -15,17 +15,19 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Address     string        `env:"ADDRESS" env-default:"localhost:8080"`
+	Host        string        `env:"HOST" env-default:"localhost"`
+	Port        string        `env:"PORT" env-default:"8080"`
 	Timeout     time.Duration `env:"TIMEOUT" env-default:"4s"`
 	IdleTimeout time.Duration `env:"IDLE_TIMEOUT" env-default:"50s"`
 }
 
 type DBConfig struct {
-	Host     string `env:"HOST"`
-	Port     string `env:"PORT"`
-	User     string `env:"USER"`
-	Password string `env:"PASSWORD"`
-	Name     string `env:"NAME"`
+	Host       string `env:"HOST"`
+	Port       string `env:"PORT"`
+	DockerPort string `env:"DOCKER_PORT"`
+	User       string `env:"USER"`
+	Password   string `env:"PASSWORD"`
+	Name       string `env:"NAME"`
 }
 
 // MustLoad Load config file and panic if errors occurs

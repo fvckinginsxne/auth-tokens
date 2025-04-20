@@ -243,12 +243,7 @@ func validateRefreshToken(refreshToken string, token, tokenPayload *model.Token)
 }
 
 func verifyRefreshToken(refreshToken, hash string) error {
-	decodedRefresh, err := base64.URLEncoding.DecodeString(refreshToken)
-	if err != nil {
-		return err
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(hash), decodedRefresh)
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(refreshToken))
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 			return ErrInvalidRefreshToken
